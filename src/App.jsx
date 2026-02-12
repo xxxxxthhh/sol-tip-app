@@ -8,7 +8,7 @@ const USD_PRESETS = [1, 5, 10, 20, 50]
 
 export default function App() {
   const { connection } = useConnection()
-  const { publicKey, sendTransaction, wallet, disconnect, select } = useWallet()
+  const { publicKey, sendTransaction, wallet, disconnect } = useWallet()
   const { setVisible } = useWalletModal()
   const [recipient, setRecipient] = useState('')
   const [usdAmount, setUsdAmount] = useState('')
@@ -78,6 +78,14 @@ export default function App() {
     }
   }, [publicKey, recipient, usdAmount, solAmount, connection, sendTransaction])
 
+  const handleSwitch = useCallback(() => {
+    setVisible(true)
+  }, [setVisible])
+
+  const handleDisconnect = useCallback(() => {
+    disconnect()
+  }, [disconnect])
+
   return (
     <div className="app">
       <header>
@@ -87,14 +95,15 @@ export default function App() {
           {publicKey ? (
             <>
               <span className="wallet-addr">{publicKey.toBase58().slice(0, 4)}...{publicKey.toBase58().slice(-4)}</span>
-              <button className="switch-btn" onClick={() => { disconnect(); select(null); setVisible(true); }}>Switch</button>
+              <button className="switch-btn" onClick={handleSwitch}>Switch</button>
+              <button className="disconnect-btn" onClick={handleDisconnect}>✕</button>
             </>
           ) : wallet ? (
             <>
               <button className="connect-btn" onClick={() => wallet.adapter.connect()}>
                 Connect {wallet.adapter.name}
               </button>
-              <button className="switch-btn" onClick={() => { select(null); setVisible(true); }}>Switch</button>
+              <button className="switch-btn" onClick={handleSwitch}>Switch</button>
             </>
           ) : (
             <button className="connect-btn" onClick={() => setVisible(true)}>
