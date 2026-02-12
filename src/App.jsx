@@ -87,8 +87,7 @@ export default function App() {
           {publicKey ? (
             <>
               <span className="wallet-addr">{publicKey.toBase58().slice(0, 4)}...{publicKey.toBase58().slice(-4)}</span>
-              <button className="switch-btn" onClick={() => { disconnect(); select(null); }}>Switch</button>
-              <button className="disconnect-btn" onClick={disconnect}>✕</button>
+              <button className="switch-btn" onClick={() => { disconnect(); select(null); setVisible(true); }}>Switch</button>
             </>
           ) : wallet ? (
             <>
