@@ -72,20 +72,17 @@ export default function App() {
 
     try {
       setStatus({ type: 'loading', msg: 'Sending transaction...' })
-      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed')
-      const tx = new Transaction({
-        blockhash,
-        lastValidBlockHeight,
-        feePayer: publicKey,
-      }).add(
+      const tx = new Transaction().add(
         SystemProgram.transfer({
           fromPubkey: publicKey,
           toPubkey: recipientKey,
           lamports: Math.round(solAmount * LAMPORTS_PER_SOL),
         })
       )
-      const sig = await sendTransaction(tx, connection)
-      await connection.confirmTransaction({ signature: sig, blockhash, lastValidBlockHeight }, 'confirmed')
+      tx.feePayer = publicKey
+      tx.recentBlockhash = (await connection.getLatestBlockhash('confirmed')).blockhash
+      const sig = await sendTransaction(tx, connection, { skipPreflight: true })
+      await connection.confirmTransaction(sig, 'confirmed')
       setStatus({
         type: 'success',
         msg: `Sent $${usdAmount} (${solAmount.toFixed(4)} SOL)`,
