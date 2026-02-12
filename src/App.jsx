@@ -96,7 +96,7 @@ export default function App() {
     } catch (err) {
       setStatus({ type: 'error', msg: err.message || 'Transaction failed' })
     }
-  }, [publicKey, recipient, usdAmount, solAmount, connection, sendTransaction])
+  }, [publicKey, recipient, usdAmount, solAmount, connection, signTransaction])
 
   const handleSwitch = useCallback(() => {
     setVisible(true)
