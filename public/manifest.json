@@ -1,0 +1,17 @@
+{
+  "name": "SOL Tip",
+  "short_name": "SOL Tip",
+  "description": "Send SOL tips quickly and easily",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#1a1a2e",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
