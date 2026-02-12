@@ -1,7 +1,10 @@
-import { useState, useCallback, useEffect } from 'react'
-import { useConnection, useWallet } from '@solana/wallet-adapter-react'
+import { useState, useCallback } from 'react'
+import { useWallet } from '@solana/wallet-adapter-react'
 import { useWalletModal } from '@solana/wallet-adapter-react-ui'
-import { PublicKey, SystemProgram, Transaction, LAMPORTS_PER_SOL } from '@solana/web3.js'
+import { useSOLPrice } from './hooks/useSOLPrice'
+import { useBalance } from './hooks/useBalance'
+import { useTipTransaction } from './hooks/useTipTransaction'
+import { useRecipientValidation } from './hooks/useRecipientValidation'
 import './App.css'
 
 const USD_PRESETS = [1, 5, 10, 20, 50]
@@ -20,33 +23,17 @@ const TIP_QUOTES = [
 ]
 
 export default function App() {
-  const { connection } = useConnection()
-  const { publicKey, sendTransaction, wallet, disconnect } = useWallet()
+  const { publicKey, wallet, disconnect } = useWallet()
   const { setVisible } = useWalletModal()
-  const [recipient, setRecipient] = useState('')
+  const { solPrice, priceLoading, priceError } = useSOLPrice()
+  const { balance, balanceLoading, refreshBalance } = useBalance()
+  const { recipient, setRecipient, recipientValid } = useRecipientValidation()
   const [usdAmount, setUsdAmount] = useState('')
-  const [solPrice, setSolPrice] = useState(null)
-  const [priceLoading, setPriceLoading] = useState(true)
-  const [status, setStatus] = useState(null)
   const [quote] = useState(() => TIP_QUOTES[Math.floor(Math.random() * TIP_QUOTES.length)])
 
-  // Fetch SOL price on mount and every 30s
-  useEffect(() => {
-    const fetchPrice = async () => {
-      try {
-        const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd')
-        const data = await res.json()
-        setSolPrice(data.solana.usd)
-      } catch {
-        // fallback: retry next interval
-      } finally {
-        setPriceLoading(false)
-      }
-    }
-    fetchPrice()
-    const interval = setInterval(fetchPrice, 30000)
-    return () => clearInterval(interval)
-  }, [])
+  const { status, send, clearStatus } = useTipTransaction({
+    onSuccess: refreshBalance,
+  })
 
   const solAmount = usdAmount && solPrice ? (parseFloat(usdAmount) / solPrice) : 0
 
@@ -55,52 +42,18 @@ export default function App() {
       const text = await navigator.clipboard.readText()
       setRecipient(text.trim())
     } catch {
-      // clipboard permission denied
+      // clipboard permission denied — mobile browsers often block this
     }
-  }, [])
+  }, [setRecipient])
 
   const handleSend = useCallback(async () => {
-    if (!publicKey || !solAmount || solAmount <= 0) return
+    await send({ recipient, solAmount, usdAmount })
+  }, [send, recipient, solAmount, usdAmount])
 
-    let recipientKey
-    try {
-      recipientKey = new PublicKey(recipient.trim())
-    } catch {
-      setStatus({ type: 'error', msg: 'Invalid recipient address' })
-      return
-    }
+  const handleSwitch = useCallback(() => setVisible(true), [setVisible])
+  const handleDisconnect = useCallback(() => disconnect(), [disconnect])
 
-    try {
-      setStatus({ type: 'loading', msg: 'Sending transaction...' })
-      const tx = new Transaction().add(
-        SystemProgram.transfer({
-          fromPubkey: publicKey,
-          toPubkey: recipientKey,
-          lamports: Math.round(solAmount * LAMPORTS_PER_SOL),
-        })
-      )
-      tx.feePayer = publicKey
-      tx.recentBlockhash = (await connection.getLatestBlockhash('confirmed')).blockhash
-      const sig = await sendTransaction(tx, connection, { skipPreflight: true })
-      await connection.confirmTransaction(sig, 'confirmed')
-      setStatus({
-        type: 'success',
-        msg: `Sent $${usdAmount} (${solAmount.toFixed(4)} SOL)`,
-        sig,
-      })
-      setUsdAmount('')
-    } catch (err) {
-      setStatus({ type: 'error', msg: err.message || 'Transaction failed' })
-    }
-  }, [publicKey, recipient, usdAmount, solAmount, connection, sendTransaction])
-
-  const handleSwitch = useCallback(() => {
-    setVisible(true)
-  }, [setVisible])
-
-  const handleDisconnect = useCallback(() => {
-    disconnect()
-  }, [disconnect])
+  const canSend = publicKey && recipientValid && usdAmount && solPrice && status?.type !== 'loading'
 
   return (
     <div className="app">
@@ -108,9 +61,12 @@ export default function App() {
         <h1>⚡ SOL Tip</h1>
         <div className="header-right">
           {solPrice && <span className="price-tag">SOL ${solPrice.toFixed(2)}</span>}
+          {priceError && !solPrice && <span className="price-tag price-error">Price unavailable</span>}
           {publicKey ? (
             <>
-              <span className="wallet-addr">{publicKey.toBase58().slice(0, 4)}...{publicKey.toBase58().slice(-4)}</span>
+              <span className="wallet-addr">
+                {publicKey.toBase58().slice(0, 4)}...{publicKey.toBase58().slice(-4)}
+              </span>
               <button className="switch-btn" onClick={handleSwitch}>Switch</button>
               <button className="disconnect-btn" onClick={handleDisconnect}>✕</button>
             </>
@@ -129,21 +85,47 @@ export default function App() {
         </div>
       </header>
 
+      {publicKey && (
+        <div className="balance-bar">
+          {balanceLoading ? (
+            <span>Loading balance...</span>
+          ) : balance !== null ? (
+            <span>
+              Balance: <strong>{balance.toFixed(4)} SOL</strong>
+              {solPrice && <span className="balance-usd"> (${(balance * solPrice).toFixed(2)})</span>}
+            </span>
+          ) : (
+            <span>Balance unavailable</span>
+          )}
+        </div>
+      )}
+
       <main>
         <div className="field">
           <label>Recipient</label>
           <div className="input-row">
-            <input
-              type="text"
-              placeholder="Wallet address..."
-              value={recipient}
-              onChange={e => setRecipient(e.target.value)}
-              spellCheck={false}
-            />
+            <div className="input-wrapper">
+              <input
+                type="text"
+                placeholder="Wallet address..."
+                value={recipient}
+                onChange={e => setRecipient(e.target.value)}
+                spellCheck={false}
+                className={recipient ? (recipientValid ? 'valid' : 'invalid') : ''}
+              />
+              {recipient && (
+                <span className={`validation-icon ${recipientValid ? 'valid' : 'invalid'}`}>
+                  {recipientValid ? '✓' : '✗'}
+                </span>
+              )}
+            </div>
             <button className="paste-btn" onClick={handlePaste} aria-label="Paste address">
               📋
             </button>
           </div>
+          {recipient && recipientValid === false && (
+            <span className="field-error">Invalid Solana address</span>
+          )}
         </div>
 
         <div className="field">
@@ -173,6 +155,11 @@ export default function App() {
             </div>
           )}
           {priceLoading && <div className="conversion">Loading price...</div>}
+          {balance !== null && solAmount > balance && (
+            <div className="field-error" style={{ textAlign: 'center' }}>
+              Exceeds your balance ({balance.toFixed(4)} SOL)
+            </div>
+          )}
         </div>
 
         <div className="tip-quote">{quote}</div>
@@ -180,9 +167,11 @@ export default function App() {
         <button
           className="send-btn"
           onClick={handleSend}
-          disabled={!publicKey || !recipient || !usdAmount || !solPrice || status?.type === 'loading'}
+          disabled={!canSend}
         >
-          {status?.type === 'loading' ? 'Sending...' : `Send ${solAmount > 0 ? solAmount.toFixed(4) : '0'} SOL ⚡`}
+          {status?.type === 'loading'
+            ? status.msg
+            : `Send ${solAmount > 0 ? solAmount.toFixed(4) : '0'} SOL ⚡`}
         </button>
 
         {status && status.type !== 'loading' && (
@@ -197,6 +186,7 @@ export default function App() {
                 View on Solscan →
               </a>
             )}
+            <button className="status-dismiss" onClick={clearStatus}>Dismiss</button>
           </div>
         )}
       </main>

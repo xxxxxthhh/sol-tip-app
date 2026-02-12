@@ -68,6 +68,71 @@ header {
   cursor: pointer;
 }
 
+.balance-bar {
+  text-align: center;
+  padding: 10px 14px;
+  background: #16213e;
+  border: 1px solid #2a2a4a;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  color: #ccc;
+  margin-bottom: 8px;
+}
+
+.balance-bar strong {
+  color: #14f195;
+}
+
+.balance-usd {
+  color: #888;
+  font-size: 0.85rem;
+}
+
+.input-wrapper {
+  flex: 1;
+  position: relative;
+}
+
+.input-wrapper input {
+  width: 100%;
+  padding-right: 36px;
+}
+
+.input-wrapper input.valid {
+  border-color: #14f195;
+}
+
+.input-wrapper input.invalid {
+  border-color: #ff4545;
+}
+
+.validation-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.validation-icon.valid {
+  color: #14f195;
+}
+
+.validation-icon.invalid {
+  color: #ff4545;
+}
+
+.field-error {
+  font-size: 0.8rem;
+  color: #ff4545;
+}
+
+.price-error {
+  color: #ff4545 !important;
+  background: rgba(255, 69, 69, 0.1) !important;
+}
+
 .conversion {
   font-size: 1.1rem;
   font-weight: 600;
@@ -255,4 +320,21 @@ input[type="number"] {
 
 .status a:hover {
   text-decoration: underline;
+}
+
+.status-dismiss {
+  display: block;
+  margin: 10px auto 0;
+  padding: 6px 16px;
+  background: transparent;
+  border: 1px solid #2a2a4a;
+  border-radius: 8px;
+  color: #888;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.status-dismiss:hover {
+  border-color: #555;
+  color: #ccc;
 }
