@@ -21,7 +21,7 @@ const TIP_QUOTES = [
 
 export default function App() {
   const { connection } = useConnection()
-  const { publicKey, sendTransaction, wallet, disconnect } = useWallet()
+  const { publicKey, signTransaction, wallet, disconnect } = useWallet()
   const { setVisible } = useWalletModal()
   const [recipient, setRecipient] = useState('')
   const [usdAmount, setUsdAmount] = useState('')
@@ -84,7 +84,8 @@ export default function App() {
           lamports: Math.round(solAmount * LAMPORTS_PER_SOL),
         })
       )
-      const sig = await sendTransaction(tx, connection)
+      const signed = await signTransaction(tx)
+      const sig = await connection.sendRawTransaction(signed.serialize())
       await connection.confirmTransaction({ signature: sig, blockhash, lastValidBlockHeight }, 'confirmed')
       setStatus({
         type: 'success',
