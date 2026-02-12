@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useConnection, useWallet } from '@solana/wallet-adapter-react'
-import { WalletMultiButton, WalletDisconnectButton } from '@solana/wallet-adapter-react-ui'
+import { useWalletModal } from '@solana/wallet-adapter-react-ui'
 import { PublicKey, SystemProgram, Transaction, LAMPORTS_PER_SOL } from '@solana/web3.js'
 import './App.css'
 
@@ -8,7 +8,8 @@ const USD_PRESETS = [1, 5, 10, 20, 50]
 
 export default function App() {
   const { connection } = useConnection()
-  const { publicKey, sendTransaction } = useWallet()
+  const { publicKey, sendTransaction, wallet, disconnect, select } = useWallet()
+  const { setVisible } = useWalletModal()
   const [recipient, setRecipient] = useState('')
   const [usdAmount, setUsdAmount] = useState('')
   const [solPrice, setSolPrice] = useState(null)
@@ -83,8 +84,24 @@ export default function App() {
         <h1>⚡ SOL Tip</h1>
         <div className="header-right">
           {solPrice && <span className="price-tag">SOL ${solPrice.toFixed(2)}</span>}
-          <WalletMultiButton />
-          {publicKey && <WalletDisconnectButton />}
+          {publicKey ? (
+            <>
+              <span className="wallet-addr">{publicKey.toBase58().slice(0, 4)}...{publicKey.toBase58().slice(-4)}</span>
+              <button className="switch-btn" onClick={() => { disconnect(); select(null); }}>Switch</button>
+              <button className="disconnect-btn" onClick={disconnect}>✕</button>
+            </>
+          ) : wallet ? (
+            <>
+              <button className="connect-btn" onClick={() => wallet.adapter.connect()}>
+                Connect {wallet.adapter.name}
+              </button>
+              <button className="switch-btn" onClick={() => { select(null); setVisible(true); }}>Switch</button>
+            </>
+          ) : (
+            <button className="connect-btn" onClick={() => setVisible(true)}>
+              Select Wallet
+            </button>
+          )}
         </div>
       </header>
 

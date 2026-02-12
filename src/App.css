@@ -17,7 +17,7 @@ header {
 .header-right {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .price-tag {
@@ -27,6 +27,45 @@ header {
   padding: 6px 10px;
   border-radius: 8px;
   white-space: nowrap;
+}
+
+.wallet-addr {
+  font-size: 0.8rem;
+  color: #ccc;
+  background: #16213e;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-family: monospace;
+}
+
+.connect-btn {
+  padding: 8px 14px;
+  background: linear-gradient(135deg, #9945ff, #7b3fe4);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.switch-btn {
+  padding: 6px 10px;
+  background: #16213e;
+  border: 1px solid #2a2a4a;
+  border-radius: 8px;
+  color: #9945ff;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.disconnect-btn {
+  padding: 6px 8px;
+  background: transparent;
+  border: 1px solid #2a2a4a;
+  border-radius: 8px;
+  color: #ff4545;
+  font-size: 0.8rem;
+  cursor: pointer;
 }
 
 .conversion {
