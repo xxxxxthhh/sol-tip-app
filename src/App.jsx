@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useConnection, useWallet } from '@solana/wallet-adapter-react'
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
+import { WalletMultiButton, WalletDisconnectButton } from '@solana/wallet-adapter-react-ui'
 import { PublicKey, SystemProgram, Transaction, LAMPORTS_PER_SOL } from '@solana/web3.js'
 import './App.css'
 
@@ -84,6 +84,7 @@ export default function App() {
         <div className="header-right">
           {solPrice && <span className="price-tag">SOL ${solPrice.toFixed(2)}</span>}
           <WalletMultiButton />
+          {publicKey && <WalletDisconnectButton />}
         </div>
       </header>
 
