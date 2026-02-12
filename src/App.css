@@ -191,6 +191,14 @@ input[type="number"] {
   color: #fff;
 }
 
+.tip-quote {
+  text-align: center;
+  font-size: 0.95rem;
+  color: #9988cc;
+  font-style: italic;
+  padding: 4px 0;
+}
+
 .send-btn {
   margin-top: 8px;
   padding: 16px;

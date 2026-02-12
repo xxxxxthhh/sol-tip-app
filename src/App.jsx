@@ -6,6 +6,19 @@ import './App.css'
 
 const USD_PRESETS = [1, 5, 10, 20, 50]
 
+const TIP_QUOTES = [
+  "A little goes a long way ☕",
+  "You're making someone's day 🌟",
+  "Generosity looks good on you 💜",
+  "Small tip, big energy ⚡",
+  "Cheers to good vibes 🥂",
+  "Spreading crypto love 💫",
+  "Thanks for being awesome 🙌",
+  "One tip closer to a better world 🌍",
+  "Good karma incoming ✨",
+  "You rock, tipper 🎸",
+]
+
 export default function App() {
   const { connection } = useConnection()
   const { publicKey, sendTransaction, wallet, disconnect } = useWallet()
@@ -15,6 +28,7 @@ export default function App() {
   const [solPrice, setSolPrice] = useState(null)
   const [priceLoading, setPriceLoading] = useState(true)
   const [status, setStatus] = useState(null)
+  const [quote] = useState(() => TIP_QUOTES[Math.floor(Math.random() * TIP_QUOTES.length)])
 
   // Fetch SOL price on mount and every 30s
   useEffect(() => {
@@ -158,6 +172,8 @@ export default function App() {
           )}
           {priceLoading && <div className="conversion">Loading price...</div>}
         </div>
+
+        <div className="tip-quote">{quote}</div>
 
         <button
           className="send-btn"
