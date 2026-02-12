@@ -153,7 +153,7 @@ export default function App() {
           />
           {usdAmount && solPrice && (
             <div className="conversion">
-              ≈ {solAmount.toFixed(4)} SOL
+              = {solAmount.toFixed(4)} SOL
             </div>
           )}
           {priceLoading && <div className="conversion">Loading price...</div>}
@@ -164,7 +164,7 @@ export default function App() {
           onClick={handleSend}
           disabled={!publicKey || !recipient || !usdAmount || !solPrice || status?.type === 'loading'}
         >
-          {status?.type === 'loading' ? 'Sending...' : `Send $${usdAmount || '0'} ⚡`}
+          {status?.type === 'loading' ? 'Sending...' : `Send ${solAmount > 0 ? solAmount.toFixed(4) : '0'} SOL ⚡`}
         </button>
 
         {status && status.type !== 'loading' && (

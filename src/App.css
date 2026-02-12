@@ -69,9 +69,11 @@ header {
 }
 
 .conversion {
-  font-size: 0.85rem;
-  color: #9945ff;
-  padding: 4px 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #14f195;
+  padding: 8px 0;
+  text-align: center;
 }
 
 header h1 {
