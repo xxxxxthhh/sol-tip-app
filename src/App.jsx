@@ -21,7 +21,7 @@ const TIP_QUOTES = [
 
 export default function App() {
   const { connection } = useConnection()
-  const { publicKey, signTransaction, wallet, disconnect } = useWallet()
+  const { publicKey, sendTransaction, wallet, disconnect } = useWallet()
   const { setVisible } = useWalletModal()
   const [recipient, setRecipient] = useState('')
   const [usdAmount, setUsdAmount] = useState('')
@@ -84,8 +84,7 @@ export default function App() {
           lamports: Math.round(solAmount * LAMPORTS_PER_SOL),
         })
       )
-      const signed = await signTransaction(tx)
-      const sig = await connection.sendRawTransaction(signed.serialize())
+      const sig = await sendTransaction(tx, connection)
       await connection.confirmTransaction({ signature: sig, blockhash, lastValidBlockHeight }, 'confirmed')
       setStatus({
         type: 'success',
@@ -96,7 +95,7 @@ export default function App() {
     } catch (err) {
       setStatus({ type: 'error', msg: err.message || 'Transaction failed' })
     }
-  }, [publicKey, recipient, usdAmount, solAmount, connection, signTransaction])
+  }, [publicKey, recipient, usdAmount, solAmount, connection, sendTransaction])
 
   const handleSwitch = useCallback(() => {
     setVisible(true)
