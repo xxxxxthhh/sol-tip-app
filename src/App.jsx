@@ -1,17 +1,39 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useConnection, useWallet } from '@solana/wallet-adapter-react'
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
 import { PublicKey, SystemProgram, Transaction, LAMPORTS_PER_SOL } from '@solana/web3.js'
 import './App.css'
 
-const PRESETS = [0.01, 0.05, 0.1, 0.5, 1]
+const USD_PRESETS = [1, 5, 10, 20, 50]
 
 export default function App() {
   const { connection } = useConnection()
   const { publicKey, sendTransaction } = useWallet()
   const [recipient, setRecipient] = useState('')
-  const [amount, setAmount] = useState('')
-  const [status, setStatus] = useState(null) // { type: 'loading'|'success'|'error', msg, sig? }
+  const [usdAmount, setUsdAmount] = useState('')
+  const [solPrice, setSolPrice] = useState(null)
+  const [priceLoading, setPriceLoading] = useState(true)
+  const [status, setStatus] = useState(null)
+
+  // Fetch SOL price on mount and every 30s
+  useEffect(() => {
+    const fetchPrice = async () => {
+      try {
+        const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd')
+        const data = await res.json()
+        setSolPrice(data.solana.usd)
+      } catch {
+        // fallback: retry next interval
+      } finally {
+        setPriceLoading(false)
+      }
+    }
+    fetchPrice()
+    const interval = setInterval(fetchPrice, 30000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const solAmount = usdAmount && solPrice ? (parseFloat(usdAmount) / solPrice) : 0
 
   const handlePaste = useCallback(async () => {
     try {
@@ -23,12 +45,7 @@ export default function App() {
   }, [])
 
   const handleSend = useCallback(async () => {
-    if (!publicKey) return
-    const sol = parseFloat(amount)
-    if (!sol || sol <= 0) {
-      setStatus({ type: 'error', msg: 'Enter a valid amount' })
-      return
-    }
+    if (!publicKey || !solAmount || solAmount <= 0) return
 
     let recipientKey
     try {
@@ -44,23 +61,30 @@ export default function App() {
         SystemProgram.transfer({
           fromPubkey: publicKey,
           toPubkey: recipientKey,
-          lamports: Math.round(sol * LAMPORTS_PER_SOL),
+          lamports: Math.round(solAmount * LAMPORTS_PER_SOL),
         })
       )
       const sig = await sendTransaction(tx, connection)
       await connection.confirmTransaction(sig, 'confirmed')
-      setStatus({ type: 'success', msg: `Sent ${sol} SOL`, sig })
-      setAmount('')
+      setStatus({
+        type: 'success',
+        msg: `Sent $${usdAmount} (${solAmount.toFixed(4)} SOL)`,
+        sig,
+      })
+      setUsdAmount('')
     } catch (err) {
       setStatus({ type: 'error', msg: err.message || 'Transaction failed' })
     }
-  }, [publicKey, recipient, amount, connection, sendTransaction])
+  }, [publicKey, recipient, usdAmount, solAmount, connection, sendTransaction])
 
   return (
     <div className="app">
       <header>
         <h1>⚡ SOL Tip</h1>
-        <WalletMultiButton />
+        <div className="header-right">
+          {solPrice && <span className="price-tag">SOL ${solPrice.toFixed(2)}</span>}
+          <WalletMultiButton />
+        </div>
       </header>
 
       <main>
@@ -81,34 +105,40 @@ export default function App() {
         </div>
 
         <div className="field">
-          <label>Amount (SOL)</label>
+          <label>Amount (USD)</label>
           <div className="presets">
-            {PRESETS.map(p => (
+            {USD_PRESETS.map(p => (
               <button
                 key={p}
-                className={`preset ${parseFloat(amount) === p ? 'active' : ''}`}
-                onClick={() => setAmount(String(p))}
+                className={`preset ${parseFloat(usdAmount) === p ? 'active' : ''}`}
+                onClick={() => setUsdAmount(String(p))}
               >
-                {p}
+                ${p}
               </button>
             ))}
           </div>
           <input
             type="number"
-            placeholder="Custom amount..."
-            value={amount}
-            onChange={e => setAmount(e.target.value)}
+            placeholder="Custom USD amount..."
+            value={usdAmount}
+            onChange={e => setUsdAmount(e.target.value)}
             min="0"
-            step="0.001"
+            step="0.01"
           />
+          {usdAmount && solPrice && (
+            <div className="conversion">
+              ≈ {solAmount.toFixed(4)} SOL
+            </div>
+          )}
+          {priceLoading && <div className="conversion">Loading price...</div>}
         </div>
 
         <button
           className="send-btn"
           onClick={handleSend}
-          disabled={!publicKey || !recipient || !amount || status?.type === 'loading'}
+          disabled={!publicKey || !recipient || !usdAmount || !solPrice || status?.type === 'loading'}
         >
-          {status?.type === 'loading' ? 'Sending...' : 'Send SOL ⚡'}
+          {status?.type === 'loading' ? 'Sending...' : `Send $${usdAmount || '0'} ⚡`}
         </button>
 
         {status && status.type !== 'loading' && (

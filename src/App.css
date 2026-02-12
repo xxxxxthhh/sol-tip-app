@@ -14,6 +14,27 @@ header {
   margin-bottom: 32px;
 }
 
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.price-tag {
+  font-size: 0.8rem;
+  color: #14f195;
+  background: rgba(20, 241, 149, 0.1);
+  padding: 6px 10px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+.conversion {
+  font-size: 0.85rem;
+  color: #9945ff;
+  padding: 4px 0;
+}
+
 header h1 {
   font-size: 1.5rem;
   background: linear-gradient(135deg, #9945ff, #14f195);
